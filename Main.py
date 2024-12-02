@@ -21,10 +21,14 @@ class Lexer:
                 start = self.pos
                 while self.pos < len(self.text) and (self.text[self.pos].isdigit() or self.text[self.pos] == '.'):
                     self.pos += 1
-                self.tokens.append(('NUMBER', self.text[start:self.pos]))
-            elif self.text[self.pos].isalpha():
+                token = self.text[start:self.pos]
+                if '.' in token:
+                    self.tokens.append(('STRING', token))
+                else:
+                    self.tokens.append(('NUMBER', token))
+            elif self.text[self.pos].isalpha() or self.text[self.pos] == '_':
                 start = self.pos
-                while self.pos < len(self.text) and self.text[self.pos].isalnum():
+                while self.pos < len(self.text) and (self.text[self.pos].isalnum() or self.text[self.pos] == '_'):
                     self.pos += 1
                 token = self.text[start:self.pos]
                 if token == 'var':
@@ -41,6 +45,7 @@ class Lexer:
             else:
                 self.tokens.append((self.text[self.pos], self.text[self.pos]))
                 self.pos += 1
+        print("Tokens:", self.tokens)  # Отладочный вывод
         return self.tokens
 
 # Синтаксический анализатор (парсер)
@@ -56,14 +61,19 @@ class Parser:
 
     def parse_statements(self):
         while self.pos < len(self.tokens):
-            if self.tokens[self.pos][0] == 'VAR':
+            current_token = self.tokens[self.pos]
+            print(f"Parsing statement: {current_token}")
+            if current_token[0] == 'VAR':
                 self.parse_variable_declaration()
-            elif self.tokens[self.pos][0] == '{':
-                return self.parse_dictionary()
+            elif current_token[0] == '{':
+                value = self.parse_dictionary()
+                self.variables['config'] = value
+                return  # Exit after parsing the dictionary
             else:
-                raise SyntaxError(f"Unexpected token: {self.tokens[self.pos]}")
+                raise SyntaxError(f"Unexpected token: {current_token}")
 
     def parse_variable_declaration(self):
+        print(f"Parsing variable declaration: {self.tokens[self.pos]}")
         self.pos += 1
         if self.tokens[self.pos][0] != 'IDENTIFIER':
             raise SyntaxError("Expected identifier after 'var'")
@@ -79,47 +89,104 @@ class Parser:
         self.variables[name] = value
 
     def parse_value(self):
+        print(f"Parsing value: {self.tokens[self.pos]}")
         if self.tokens[self.pos][0] == 'NUMBER':
-            return float(self.tokens[self.pos][1])
+            value = float(self.tokens[self.pos][1])
+            self.pos += 1
+            return value
         elif self.tokens[self.pos][0] == 'IDENTIFIER':
-            return self.variables[self.tokens[self.pos][1]]
-        elif self.tokens[self.pos][0] == '@':
-            return self.parse_postfix_expression()
-        elif self.tokens[self.pos][0] == '{':
-            return self.parse_dictionary()
+            if self.tokens[self.pos][1] not in self.variables:
+                raise NameError(f"Undefined variable: {self.tokens[self.pos][1]}")
+            value = self.variables[self.tokens[self.pos][1]]
+            self.pos += 1
+            return value
         elif self.tokens[self.pos][0] == 'STRING':
-            return self.tokens[self.pos][1]
+            value = self.tokens[self.pos][1]
+            self.pos += 1
+            return value
+        elif self.tokens[self.pos][0] == '@':
+            value = self.parse_postfix_expression()
+            return value
+        elif self.tokens[self.pos][0] == '{':
+            value = self.parse_dictionary()
+            return value
         else:
             raise SyntaxError(f"Unexpected token: {self.tokens[self.pos]}")
 
     def parse_postfix_expression(self):
-        self.pos += 2  # Skip '@['
+        print(f"Parsing postfix expression: {self.tokens[self.pos]}")
+        self.pos += 1  # Skip '@'
+        self.pos += 1  # Skip '['
         stack = []
         while self.tokens[self.pos][0] != ']':
+            print(f"Current token: {self.tokens[self.pos]}")
+            print(f"Stack: {stack}")
             if self.tokens[self.pos][0] == 'IDENTIFIER':
-                stack.append(self.variables[self.tokens[self.pos][1]])
+                ident = self.tokens[self.pos][1]
+                if ident not in self.variables:
+                    raise NameError(f"Undefined variable: {ident}")
+                value = self.variables[ident]
+                stack.append(value)
+                self.pos += 1
             elif self.tokens[self.pos][0] == 'NUMBER':
                 stack.append(float(self.tokens[self.pos][1]))
+                self.pos += 1
             elif self.tokens[self.pos][0] in '+-*/':
+                if len(stack) < 2:
+                    raise SyntaxError("Not enough operands for operator")
                 b = stack.pop()
                 a = stack.pop()
-                if self.tokens[self.pos][0] == '+':
-                    stack.append(a + b)
-                elif self.tokens[self.pos][0] == '-':
-                    stack.append(a - b)
-                elif self.tokens[self.pos][0] == '*':
-                    stack.append(a * b)
-                elif self.tokens[self.pos][0] == '/':
-                    stack.append(a / b)
+                if isinstance(a, str) and '.' in a and isinstance(b, (int, float)):
+                    # Increment the last octet of the IP address
+                    octets = list(map(int, a.split('.')))
+                    octets[3] += int(b)
+                    if octets[3] > 255:
+                        octets[3] = 255
+                    a = '.'.join(map(str, octets))
+                    stack.append(a)
+                    self.pos += 1  # Increment position after processing operator
+                elif isinstance(a, (int, float)) and isinstance(b, (int, float)):
+                    op = self.tokens[self.pos][0]
+                    if op == '+':
+                        stack.append(a + b)
+                    elif op == '-':
+                        stack.append(a - b)
+                    elif op == '*':
+                        stack.append(a * b)
+                    elif op == '/':
+                        stack.append(a / b)
+                    self.pos += 1
+                else:
+                    raise TypeError("Unsupported operand types for operation")
             elif self.tokens[self.pos][0] == 'mod':
+                if len(stack) < 2:
+                    raise SyntaxError("Not enough operands for mod")
                 b = stack.pop()
                 a = stack.pop()
-                stack.append(a % b)
-            self.pos += 1
+                if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+                    stack.append(a % b)
+                else:
+                    raise TypeError("Operands must be numbers for mod operation")
+                self.pos += 1  # Skip 'mod'
+                print(f"Skipped 'mod', current token: {self.tokens[self.pos]}")
+                if self.tokens[self.pos][0] == '(':
+                    self.pos += 1
+                    if self.tokens[self.pos][0] == ')':
+                        self.pos += 1
+                    else:
+                        raise SyntaxError("Expected ')' after 'mod('")
+                else:
+                    raise SyntaxError("Expected '(' after 'mod'")
+            else:
+                raise SyntaxError(f"Unexpected token in postfix expression: {self.tokens[self.pos]}")
         self.pos += 1  # Skip ']'
+        if len(stack) != 1:
+            raise SyntaxError("Postfix expression did not result in a single value")
+        print(f"Postfix expression result: {stack[0]}")
         return stack[0]
 
     def parse_dictionary(self):
+        print(f"Parsing dictionary: {self.tokens[self.pos]}")
         self.pos += 1  # Skip '{'
         dictionary = {}
         while self.tokens[self.pos][0] != '}':
