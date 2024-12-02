@@ -1,0 +1,2 @@
+python Main.py database_config.txt
+python Main.py network_config.txt

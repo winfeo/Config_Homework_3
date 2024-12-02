@@ -1,0 +1,50 @@
+#=
+Это конфигурация базы данных
+=#
+
+var DB_NAME = "my_database";
+var DB_USER = "admin";
+var DB_PASSWORD = "password123";
+var DB_PORT = 3306;
+var TABLE_ID = 100;
+
+{
+    DATABASE: {
+        NAME: DB_NAME,
+        USER: DB_USER,
+        PASSWORD: DB_PASSWORD,
+        PORT: DB_PORT,
+        TABLES: {
+            USERS: {
+                ID: @[TABLE_ID 1 +],
+                COLUMNS: {
+                    ID: "INT",
+                    NAME: "VARCHAR(255)",
+                    EMAIL: "VARCHAR(255)"
+                }
+            },
+            ORDERS: {
+                ID: @[TABLE_ID 2 +],
+                COLUMNS: {
+                    ORDER_ID: "INT",
+                    USER_ID: "INT",
+                    AMOUNT: "DECIMAL(10,2)"
+                }
+            }
+        }
+    },
+    CONNECTION: {
+        HOST: "localhost",
+        OPTIONS: {
+            AUTOCOMMIT: true,
+            TIMEOUT: 30
+        }
+    },
+    CALCULATIONS: {
+        SUM: @[10 20 +],
+        DIFFERENCE: @[20 10 -],
+        PRODUCT: @[10 2 *],
+        QUOTIENT: @[20 10 /],
+        MODULO: @[20 3 mod()]
+    }
+}

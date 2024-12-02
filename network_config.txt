@@ -1,0 +1,47 @@
+#=
+Это конфигурация сетевого оборудования
+=#
+
+var IP_ADDRESS = 192.168.1.1;
+var SUBNET_MASK = 255.255.255.0;
+var GATEWAY = 192.168.1.254;
+var PORT = 8080;
+
+{
+    ROUTER: {
+        IP: IP_ADDRESS,
+        MASK: SUBNET_MASK,
+        GATEWAY: GATEWAY,
+        INTERFACES: {
+            ETH0: {
+                IP: @[IP_ADDRESS 1 +],
+                MASK: SUBNET_MASK
+            },
+            ETH1: {
+                IP: @[IP_ADDRESS 2 +],
+                MASK: SUBNET_MASK
+            }
+        }
+    },
+    FIREWALL: {
+        RULES: {
+            RULE1: {
+                PROTOCOL: "TCP",
+                PORT: @[PORT 100 +],
+                ACTION: "ALLOW"
+            },
+            RULE2: {
+                PROTOCOL: "UDP",
+                PORT: @[PORT 200 +],
+                ACTION: "ALLOW"
+            }
+        }
+    },
+    CALCULATIONS: {
+        SUM: @[10 20 +],
+        DIFFERENCE: @[20 10 -],
+        PRODUCT: @[10 2 *],
+        QUOTIENT: @[20 10 /],
+        MODULO: @[20 3 mod()]
+    }
+}
