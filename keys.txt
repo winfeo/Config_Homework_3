@@ -1,2 +1,2 @@
-python Main.py database_config.txt
-python Main.py network_config.txt
+python "C:\Users\User\Desktop\ДЗ_ИНФА\Конфиг\Config_Homework_3\Main.py" "C:\Users\User\Desktop\ДЗ_ИНФА\Конфиг\Config_Homework_3\database_config.txt"
+python "C:\Users\User\Desktop\ДЗ_ИНФА\Конфиг\Config_Homework_3\Main.py" "C:\Users\User\Desktop\ДЗ_ИНФА\Конфиг\Config_Homework_3\network_config.txt"

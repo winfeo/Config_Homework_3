@@ -24,9 +24,20 @@ class Lexer:
                 self.tokens.append(('NUMBER', self.text[start:self.pos]))
             elif self.text[self.pos].isalpha():
                 start = self.pos
-                while self.pos < len(self.text) and self.text[self.pos].isalpha():
+                while self.pos < len(self.text) and self.text[self.pos].isalnum():
                     self.pos += 1
-                self.tokens.append(('IDENTIFIER', self.text[start:self.pos]))
+                token = self.text[start:self.pos]
+                if token == 'var':
+                    self.tokens.append(('VAR', token))
+                else:
+                    self.tokens.append(('IDENTIFIER', token))
+            elif self.text[self.pos] == '"':
+                start = self.pos
+                self.pos += 1
+                while self.pos < len(self.text) and self.text[self.pos] != '"':
+                    self.pos += 1
+                self.tokens.append(('STRING', self.text[start+1:self.pos]))
+                self.pos += 1
             else:
                 self.tokens.append((self.text[self.pos], self.text[self.pos]))
                 self.pos += 1
@@ -45,10 +56,10 @@ class Parser:
 
     def parse_statements(self):
         while self.pos < len(self.tokens):
-            if self.tokens[self.pos][0] == 'var':
+            if self.tokens[self.pos][0] == 'VAR':
                 self.parse_variable_declaration()
             elif self.tokens[self.pos][0] == '{':
-                self.parse_dictionary()
+                return self.parse_dictionary()
             else:
                 raise SyntaxError(f"Unexpected token: {self.tokens[self.pos]}")
 
@@ -76,6 +87,8 @@ class Parser:
             return self.parse_postfix_expression()
         elif self.tokens[self.pos][0] == '{':
             return self.parse_dictionary()
+        elif self.tokens[self.pos][0] == 'STRING':
+            return self.tokens[self.pos][1]
         else:
             raise SyntaxError(f"Unexpected token: {self.tokens[self.pos]}")
 
