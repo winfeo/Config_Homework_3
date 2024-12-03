@@ -8,13 +8,16 @@ class Lexer:
         self.text = text
         self.pos = 0
         self.tokens = []
+        self.comment = None
 
     def tokenize(self):
         while self.pos < len(self.text):
             if self.text[self.pos:self.pos+2] == '#=':
+                start = self.pos
                 self.pos += 2
                 while self.text[self.pos:self.pos+2] != '=#':
                     self.pos += 1
+                self.comment = self.text[start+2:self.pos]
                 self.pos += 2
             elif self.text[self.pos].isspace():
                 self.pos += 1
@@ -49,7 +52,7 @@ class Lexer:
                 self.tokens.append((self.text[self.pos], self.text[self.pos]))
                 self.pos += 1
         # print("Tokens:", self.tokens)  # Отладочный вывод
-        return self.tokens
+        return self.tokens, self.comment
 
 # Синтаксический анализатор (парсер)
 class Parser:
@@ -204,8 +207,10 @@ class Parser:
 
 # Генератор XML
 class XMLGenerator:
-    def generate_xml(self, variables):
+    def generate_xml(self, variables, comment):
         root = ET.Element("config")
+        if comment:
+            root.append(ET.Comment(f" {comment} "))
         self.add_dictionary(root, variables)
         return self.prettify(root)
 
@@ -234,13 +239,13 @@ def main():
         text = file.read()
 
     lexer = Lexer(text)
-    tokens = lexer.tokenize()
+    tokens, comment = lexer.tokenize()
 
     parser = Parser(tokens)
     variables = parser.parse()
 
     xml_generator = XMLGenerator()
-    xml_output = xml_generator.generate_xml(variables)
+    xml_output = xml_generator.generate_xml(variables, comment)
 
     print(xml_output)
 
