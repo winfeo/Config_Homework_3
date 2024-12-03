@@ -4,7 +4,7 @@
 
 var DB_NAME = "my_database";
 var DB_USER = "admin";
-var DB_PASSWORD = "password123";
+var DB_PASSWORD = "hardpassword123";
 var DB_PORT = 3306;
 var TABLE_ID = 100;
 
@@ -36,15 +36,15 @@ var TABLE_ID = 100;
     CONNECTION: {
         HOST: "localhost",
         OPTIONS: {
-            AUTOCOMMIT: true,
+            AUTOCOMMIT: "YES",
             TIMEOUT: 30
         }
     },
     CALCULATIONS: {
-        SUM: @[10 20 +],
-        DIFFERENCE: @[20 10 -],
-        PRODUCT: @[10 2 *],
-        QUOTIENT: @[20 10 /],
-        MODULO: @[20 3 mod()]
+        SUM: @[15 30 +],
+        DIFFERENCE: @[100 52 -],
+        PRODUCT: @[17 3 *],
+        QUOTIENT: @[33 10 /],
+        MODULO: @[33 5 mod()]
     }
 }
