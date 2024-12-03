@@ -209,10 +209,8 @@ class Parser:
 class XMLGenerator:
     def generate_xml(self, variables, comment):
         root = ET.Element("config")
-        if comment:
-            root.append(ET.Comment(f" {comment} "))
         self.add_dictionary(root, variables)
-        return self.prettify(root)
+        return self.prettify(root, comment)
 
     def add_dictionary(self, parent, dictionary):
         dict_element = ET.SubElement(parent, "dictionary")
@@ -223,11 +221,17 @@ class XMLGenerator:
             else:
                 entry_element.set("value", str(value))
 
-    def prettify(self, elem):
+    def prettify(self, elem, comment):
         """Возвращает красиво отформатированный XML-строку."""
         rough_string = ET.tostring(elem, 'utf-8')
         reparsed = minidom.parseString(rough_string)
-        return reparsed.toprettyxml(indent="  ")
+        pretty_xml = reparsed.toprettyxml(indent="  ")
+
+        # Добавляем комментарий в самом начале
+        if comment:
+            pretty_xml = f"<!--{comment}-->\n{pretty_xml}"
+
+        return pretty_xml
 
 # Основная функция
 def main():
@@ -235,7 +239,7 @@ def main():
     parser.add_argument('input_file', help='Path to the input configuration file')
     args = parser.parse_args()
 
-    with open(args.input_file, 'r') as file:
+    with open(args.input_file, 'r', encoding='utf-8') as file:
         text = file.read()
 
     lexer = Lexer(text)
